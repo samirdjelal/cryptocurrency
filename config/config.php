@@ -35,6 +35,6 @@ return [
 	 * Setting the  gap_limit to more than 20, This might make funds inaccessible.
 	 */
 
-	'gap_limit' => 20,
+	'gap_limit' => 100,
 
 ];

@@ -16,7 +16,9 @@ class CreateCryptocurrencyTable extends Migration
         Schema::create('cryptocurrency', function (Blueprint $table) {
             $table->id();
             $table->string('order_id')->unique();
+            $table->string('address');
             $table->string('callback');
+            $table->bigInteger('amount')->nullable();
             $table->string('status')->default('waiting');
             $table->timestamps();
         });

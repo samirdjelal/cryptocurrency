@@ -24,12 +24,9 @@ class CryptocurrencyServiceProvider extends ServiceProvider
 				__DIR__ . '/../config/config.php' => config_path('cryptocurrency.php'),
 			], 'config');
 
-			if (!class_exists('CreateCryptocurrencyTable')) {
-				$this->publishes([
-					__DIR__ . '/../database/migrations/create_cryptocurrency_table.php.stub' => database_path('/migrations/' . date('Y_m_d_His', time()) . '_create_cryptocurrency_table.php')
-				], 'migrations');
-			}
-
+			$this->publishes([
+				__DIR__ . '/../database/migrations/create_cryptocurrency_table.php.stub' => database_path('/migrations/2020_06_23_000000_create_cryptocurrency_table.php')
+			], 'migrations');
 
 			// Publishing the views.
 			/*$this->publishes([

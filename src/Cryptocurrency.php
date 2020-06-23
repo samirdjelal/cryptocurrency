@@ -85,15 +85,17 @@ class Cryptocurrency
 			// $callback = url("/cryptocurrency/callback/?invoice=" . $this->orderId . "&secret=" . config('cryptocurrency.secret_key'));
 			$callback = 'https://laravel7.sharedwithexpose.com/cryptocurrency/callback/' . $this->orderId . '/' . config('cryptocurrency.callback_secret_key');
 
-//			$order = CryptocurrencyModel::where('callback', '=', $callback)->first();
+			/**
+			 * check if the order is still valid.
+			 */
 			$order = CryptocurrencyModel::where('order_id', '=', $this->orderId)->first();
-			if (!$order) {
-				$order = new CryptocurrencyModel();
-				$order->order_id = $this->orderId;
-				$order->callback = $callback;
-				$order->save();
+			if ($order) {
+				return [
+					'status' => true,
+					'address' => $order->address,
+					'callback' => $order->callback,
+				];
 			}
-			ddd($order);
 
 			$response = $this->client->request('GET',
 				'https://api.blockchain.info/v2/receive?key=' . config('cryptocurrency.blockchain_api_key') .
@@ -102,7 +104,15 @@ class Cryptocurrency
 				'&gap_limit=' . config('cryptocurrency.gap_limit'));
 
 			$r = \GuzzleHttp\json_decode($response->getBody()->getContents());
+
 			if ($response->getStatusCode() == 200) {
+
+				CryptocurrencyModel::create([
+					'order_id' => $this->orderId,
+					'address' => $r->address,
+					'callback' => $callback
+				]);
+
 				return [
 					'status' => true,
 					'address' => $r->address,
@@ -110,35 +120,30 @@ class Cryptocurrency
 				];
 			}
 
-//			return [
-//				'status' => false,
-//				'message' => $r->message,
-//				'description' => $r->description,
-//			];
-
 		} catch (GuzzleException $e) {
 		}
-//		return [
-//			'status' => false,
-//			'message' => 'failed to fetch an address',
-//			'description' => 'something went wrong.',
-//		];
 
-		// todo: get the first unused address instead of return an error.
-//		$order = CryptocurrencyModel::where('callback', '=', $callback)->first();
-//		if (!$order) {
-//			$order = new CryptocurrencyModel();
-//			$order->order_id = $this->orderId;
-//			$order->callback = $callback;
-//			$order->save();
-//		}
-//		ddd($order);
+		/**
+		 * re-use the first unused address instead of return an error.
+		 */
+
+		$oldOrder = CryptocurrencyModel::where('status', '=', 'waiting')->first();
+		if ($oldOrder) {
+			$newOrder = CryptocurrencyModel::create([
+				'order_id' => $this->orderId,
+				'address' => $oldOrder->address,
+				'callback' => $callback
+			]);
+			$oldOrder->delete();
+			return [
+				'status' => true,
+				'address' => $newOrder->address,
+				'callback' => $newOrder->callback,
+			];
+		}
 		return [
-			'status' => true,
-			'address' => $r->address,
-			'callback' => $r->callback,
+			'status' => false,
+			'message' => 'failed to fetch an address.',
 		];
-
 	}
-
 }
