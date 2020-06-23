@@ -4,16 +4,21 @@ namespace Samirdjelal\Cryptocurrency;
 
 use GuzzleHttp\Client as GuzzleClient;
 use GuzzleHttp\Exception\GuzzleException;
+use Samirdjelal\Cryptocurrency\Models\Cryptocurrency as CryptocurrencyModel;
 
 class Cryptocurrency
 {
 	protected $client;
 	// private $currency;
-	private $orderId;
+	protected $orderId;
 
 	public function __construct()
 	{
-		$this->client = new GuzzleClient();
+		$this->client = new GuzzleClient([
+			'verify' => false,
+			'http_errors' => false,
+			'decode_content' => false
+		]);
 	}
 
 	/**
@@ -32,9 +37,38 @@ class Cryptocurrency
 			$response = $this->client->request('GET', 'https://blockchain.info/ticker', [
 				'headers' => ['Accepts' => 'application/json']
 			]);
-			return \GuzzleHttp\json_decode($response->getBody()->getContents())->USD->last;
+			$result = \GuzzleHttp\json_decode($response->getBody()->getContents());
+			return [
+				'status' => true,
+				'usd' => $result->USD->last,
+				'aud' => $result->AUD->last,
+				'brl' => $result->BRL->last,
+				'cad' => $result->CAD->last,
+				'chf' => $result->CHF->last,
+				'clp' => $result->CLP->last,
+				'cny' => $result->CNY->last,
+				'dkk' => $result->DKK->last,
+				'eur' => $result->EUR->last,
+				'gbp' => $result->GBP->last,
+				'hkd' => $result->HKD->last,
+				'inr' => $result->INR->last,
+				'isk' => $result->ISK->last,
+				'jpy' => $result->JPY->last,
+				'krw' => $result->KRW->last,
+				'nzd' => $result->NZD->last,
+				'pln' => $result->PLN->last,
+				'rub' => $result->RUB->last,
+				'sek' => $result->SEK->last,
+				'sgd' => $result->SGD->last,
+				'thb' => $result->THB->last,
+				'try' => $result->TRY->last,
+				'twd' => $result->TWD->last
+			];
 		} catch (GuzzleException $e) {
-			return 'failed to fetch the price.';
+			return [
+				'status' => false,
+				'message' => 'failed to fetch the price.',
+			];
 		}
 
 	}
@@ -48,26 +82,63 @@ class Cryptocurrency
 	public function address()
 	{
 		try {
-			 $callback = url("/cryptocurrency/callback/?invoice=" . $this->orderId . "&secret=" . config('cryptocurrency.secret_key'));
-//			$callback = 'https://laravel7.sharedwithexpose.com/cryptocurrency/callback/?invoice=' . urlencode($this->orderId) . '&secret=' . urlencode(config('cryptocurrency.callback_secret_key'));
+			// $callback = url("/cryptocurrency/callback/?invoice=" . $this->orderId . "&secret=" . config('cryptocurrency.secret_key'));
+			$callback = 'https://laravel7.sharedwithexpose.com/cryptocurrency/callback/' . $this->orderId . '/' . config('cryptocurrency.callback_secret_key');
+
+//			$order = CryptocurrencyModel::where('callback', '=', $callback)->first();
+			$order = CryptocurrencyModel::where('order_id', '=', $this->orderId)->first();
+			if (!$order) {
+				$order = new CryptocurrencyModel();
+				$order->order_id = $this->orderId;
+				$order->callback = $callback;
+				$order->save();
+			}
+			ddd($order);
+
 			$response = $this->client->request('GET',
-				'https://api.blockchain.info/v2/receive?key=' . config('cryptocurrency.blockchain_api_key') . '&xpub=' . config('cryptocurrency.blockchain_xpub') . '&callback=' . urlencode($callback));
+				'https://api.blockchain.info/v2/receive?key=' . config('cryptocurrency.blockchain_api_key') .
+				'&xpub=' . config('cryptocurrency.blockchain_xpub') .
+				'&callback=' . urlencode($callback) .
+				'&gap_limit=' . config('cryptocurrency.gap_limit'));
 
-			$result = \GuzzleHttp\json_decode($response->getBody()->getContents());
-			return [
-				'status' => true,
-				'address' => $result->address,
-				'callback' => $result->callback,
-			];
+			$r = \GuzzleHttp\json_decode($response->getBody()->getContents());
+			if ($response->getStatusCode() == 200) {
+				return [
+					'status' => true,
+					'address' => $r->address,
+					'callback' => $r->callback,
+				];
+			}
+
+//			return [
+//				'status' => false,
+//				'message' => $r->message,
+//				'description' => $r->description,
+//			];
+
 		} catch (GuzzleException $e) {
-			return [
-				'status' => false,
-				'message' => 'failed to fetch the address.',
-			];
 		}
+//		return [
+//			'status' => false,
+//			'message' => 'failed to fetch an address',
+//			'description' => 'something went wrong.',
+//		];
+
+		// todo: get the first unused address instead of return an error.
+//		$order = CryptocurrencyModel::where('callback', '=', $callback)->first();
+//		if (!$order) {
+//			$order = new CryptocurrencyModel();
+//			$order->order_id = $this->orderId;
+//			$order->callback = $callback;
+//			$order->save();
+//		}
+//		ddd($order);
+		return [
+			'status' => true,
+			'address' => $r->address,
+			'callback' => $r->callback,
+		];
+
 	}
-
-
-
 
 }
