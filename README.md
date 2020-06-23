@@ -1,11 +1,13 @@
-# Very short description of the package
+# Cryptocurrency
 
 [![Latest Version on Packagist](https://img.shields.io/packagist/v/samirdjelal/cryptocurrency.svg?style=flat-square)](https://packagist.org/packages/samirdjelal/cryptocurrency)
 [![Build Status](https://img.shields.io/travis/samirdjelal/cryptocurrency/master.svg?style=flat-square)](https://travis-ci.org/samirdjelal/cryptocurrency)
 [![Quality Score](https://img.shields.io/scrutinizer/g/samirdjelal/cryptocurrency.svg?style=flat-square)](https://scrutinizer-ci.com/g/samirdjelal/cryptocurrency)
 [![Total Downloads](https://img.shields.io/packagist/dt/samirdjelal/cryptocurrency.svg?style=flat-square)](https://packagist.org/packages/samirdjelal/cryptocurrency)
 
-This is where your description should go. Try and limit it to a paragraph or two, and maybe throw in a mention of what PSRs you support to avoid any confusion with users and contributors.
+Cryptocurrency toolkit let you integrate cryptocurrencies payment system into your existing laravel application.
+
+Currently it support bitcoin.
 
 ## Installation
 
@@ -15,10 +17,24 @@ You can install the package via composer:
 composer require samirdjelal/cryptocurrency
 ```
 
+Add the following fields to your `.env` file.
+```
+BLOCKCHAIN_API_KEY=
+BLOCKCHAIN_XPUB=
+CALLBACK_SECRET_KEY=
+```
+
+
 ## Usage
 
 ``` php
-// Usage description here
+
+// Get the current price of 1 BTC in USD.
+Cryptocurrency::bitcoin()->price();
+
+// Generate a unique bitcoin address for a specific order id. 
+Cryptocurrency::bitcoin()->orderId('abcd')->address();
+
 ```
 
 ### Testing

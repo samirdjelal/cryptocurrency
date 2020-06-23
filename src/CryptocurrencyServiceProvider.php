@@ -54,7 +54,7 @@ class CryptocurrencyServiceProvider extends ServiceProvider
 
         // Register the main class to use with the facade
         $this->app->singleton('cryptocurrency', function () {
-            return new Cryptocurrency;
+            return new Cryptocurrency();
         });
     }
 }
