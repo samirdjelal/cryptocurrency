@@ -1,4 +1,5 @@
 # Cryptocurrency
+## Note: this package is not ready for production.
 
 [![Latest Version on Packagist](https://img.shields.io/packagist/v/samirdjelal/cryptocurrency.svg?style=flat-square)](https://packagist.org/packages/samirdjelal/cryptocurrency)
 [![Build Status](https://img.shields.io/travis/samirdjelal/cryptocurrency/master.svg?style=flat-square)](https://travis-ci.org/samirdjelal/cryptocurrency)
