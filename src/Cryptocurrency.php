@@ -31,40 +31,27 @@ class Cryptocurrency
 		return $this;
 	}
 
-	public function price()
+	/**
+	 * Get the current price of 1 BTC in USD.
+	 * @param bool $returnJson
+	 * @return array
+	 */
+	public function price($returnJson = true)
 	{
 		try {
 			$response = $this->client->request('GET', 'https://blockchain.info/ticker', [
 				'headers' => ['Accepts' => 'application/json']
 			]);
 			$result = \GuzzleHttp\json_decode($response->getBody()->getContents());
+			if ($returnJson == false) return $result->USD->last;
 			return [
 				'status' => true,
 				'usd' => $result->USD->last,
-				'aud' => $result->AUD->last,
-				'brl' => $result->BRL->last,
-				'cad' => $result->CAD->last,
-				'chf' => $result->CHF->last,
-				'clp' => $result->CLP->last,
-				'cny' => $result->CNY->last,
-				'dkk' => $result->DKK->last,
 				'eur' => $result->EUR->last,
 				'gbp' => $result->GBP->last,
-				'hkd' => $result->HKD->last,
-				'inr' => $result->INR->last,
-				'isk' => $result->ISK->last,
-				'jpy' => $result->JPY->last,
-				'krw' => $result->KRW->last,
-				'nzd' => $result->NZD->last,
-				'pln' => $result->PLN->last,
-				'rub' => $result->RUB->last,
-				'sek' => $result->SEK->last,
-				'sgd' => $result->SGD->last,
-				'thb' => $result->THB->last,
-				'try' => $result->TRY->last,
-				'twd' => $result->TWD->last
 			];
 		} catch (GuzzleException $e) {
+			if ($returnJson == false) return false;
 			return [
 				'status' => false,
 				'message' => 'failed to fetch the price.',
@@ -81,6 +68,11 @@ class Cryptocurrency
 
 	public function address()
 	{
+		if (empty($this->orderId)) return [
+			'status' => false,
+			'message' => 'orderId() is missing!',
+		];
+
 		try {
 			// $callback = url("/cryptocurrency/callback/?invoice=" . $this->orderId . "&secret=" . config('cryptocurrency.secret_key'));
 			$callback = 'https://laravel7.sharedwithexpose.com/cryptocurrency/callback/' . $this->orderId . '/' . config('cryptocurrency.callback_secret_key');
@@ -146,4 +138,83 @@ class Cryptocurrency
 			'message' => 'failed to fetch an address.',
 		];
 	}
+
+
+	/**
+	 * Check a specific orderId status, and get the total value received in the cryptocurrency address
+	 * @return array|bool[]
+	 */
+	public function check()
+	{
+		if (empty($this->orderId)) return [
+			'status' => false,
+			'message' => 'orderId() is missing!',
+		];
+		try {
+			$order = CryptocurrencyModel::where('order_id', '=', $this->orderId)->first();
+			if ($order) {
+				$response = $this->client->request('GET', 'https://blockchain.info/rawaddr/' . $order->address, [
+					'headers' => ['Accepts' => 'application/json']
+				]);
+				$result = \GuzzleHttp\json_decode($response->getBody()->getContents());
+				ddd($result);
+				ddd($this->btcToUsd($result->total_received));
+//				return [
+//					'status' => true,
+//					'callback' => \GuzzleHttp\json_decode($response->getBody()->getContents())->gap
+//				];
+			}
+		} catch (GuzzleException $e) {
+		}
+		return ['status' => false];
+	}
+
+
+	public function callback()
+	{
+		if (empty($this->orderId)) return [
+			'status' => false,
+			'message' => 'orderId() is missing!',
+		];
+		try {
+			$order = CryptocurrencyModel::where('order_id', '=', $this->orderId)->first();
+			if ($order) {
+				$response = $this->client->request('GET', 'https://api.blockchain.info/v2/receive/callback_log?callback=' . urlencode($order->callback) . '&key=' . config('cryptocurrency.blockchain_api_key'), [
+					'headers' => ['Accepts' => 'application/json']
+				]);
+				// ddd($response->getBody()->getContents());
+				return [
+					'status' => true,
+					'callback' => \GuzzleHttp\json_decode($response->getBody()->getContents())
+				];
+			}
+		} catch (GuzzleException $e) {
+		}
+		return ['status' => false];
+	}
+
+	public function btcToUsd($value=0)
+	{
+		return round((($value / 100000000) * $this->price(false)), 2);
+	}
+
+	/**
+	 * The gap between the last used address and the last generated address.
+	 * @return array|bool[]
+	 */
+	public function gap()
+	{
+		try {
+			$response = $this->client->request('GET', 'https://api.blockchain.info/v2/receive/checkgap?xpub=' . config('cryptocurrency.blockchain_xpub') . '&key=' . config('cryptocurrency.blockchain_api_key'), [
+				'headers' => ['Accepts' => 'application/json']
+			]);
+			return [
+				'status' => true,
+				'gap' => \GuzzleHttp\json_decode($response->getBody()->getContents())->gap
+			];
+		} catch (GuzzleException $e) {
+		}
+		return ['status' => false];
+	}
+
 }

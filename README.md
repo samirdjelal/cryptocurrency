@@ -33,7 +33,16 @@ CALLBACK_SECRET_KEY=
 Cryptocurrency::bitcoin()->price();
 
 // Generate a unique bitcoin address for a specific order id. 
-Cryptocurrency::bitcoin()->orderId('abcd')->address();
+Cryptocurrency::bitcoin()->orderId('abcd11')->address();
+
+// The gap between the last used address and the last generated address.
+Cryptocurrency::bitcoin()->gap();
+
+// Get information about a callback that already exists for a specific orderId.
+Cryptocurrency::bitcoin()->orderId('abcd11')->callback();
+
+// Check if a payment is made.
+Cryptocurrency::bitcoin()->orderId('abcd11')->check();
 
 ```
 
